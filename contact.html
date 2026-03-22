@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact — ZMW Apps</title>
+    <meta name="description" content="Get in touch with ZMW Apps. Email us or report a bug on GitHub.">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .page-header {
+            padding: 64px 24px 0;
+        }
+
+        .page-body {
+            padding: 48px 24px 0;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 32px 0;
+        }
+
+        .contact-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+        }
+
+        .contact-card-icon {
+            font-size: 28px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .contact-card h3 {
+            font-size: 17px;
+            margin-bottom: 10px;
+        }
+
+        .contact-card p {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .email-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(245,166,35,0.1);
+            border: 1px solid rgba(245,166,35,0.3);
+            color: var(--accent);
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .email-link:hover {
+            background: rgba(245,166,35,0.18);
+            text-decoration: none;
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(102,126,234,0.1);
+            border: 1px solid rgba(102,126,234,0.3);
+            color: #a5b4fc;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+        }
+
+        .github-link:hover {
+            background: rgba(102,126,234,0.18);
+            text-decoration: none;
+        }
+
+        .note {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .note strong { color: var(--text); }
+
+        @media (max-width: 560px) {
+            .contact-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <a class="nav-logo" href="index.html">ZMW<span>Apps</span></a>
+        <ul class="nav-links">
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html" class="active">Contact</a></li>
+            <li><a href="privacy.html">Privacy</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="page-header">
+    <div class="container-narrow">
+        <div class="section-label">We'd love to hear from you</div>
+        <h1>Get in Touch</h1>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-narrow">
+
+        <p>Have a question, a suggestion, or need help with the app? We're a small operation, but we take every message seriously and will get back to you as soon as we can.</p>
+
+        <div class="contact-grid">
+            <div class="contact-card">
+                <span class="contact-card-icon">✉️</span>
+                <h3>Email Us</h3>
+                <p>For general questions, feedback, or anything that doesn't fit a bug report — email is the best way to reach us.</p>
+                <a href="mailto:ZMWApps@outlook.com" class="email-link">ZMWApps@outlook.com</a>
+            </div>
+            <div class="contact-card">
+                <span class="contact-card-icon">🐛</span>
+                <h3>Report a Bug</h3>
+                <p>Found something broken? We use GitHub Issues to track bugs and feature requests. Include your device, OS version, and what you were doing.</p>
+                <a href="https://github.com/Robiton/collectionapp-support/issues/new" class="github-link" target="_blank" rel="noopener">Open an Issue on GitHub</a>
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>Not on GitHub?</strong> No problem — email us at <a href="mailto:ZMWApps@outlook.com">ZMWApps@outlook.com</a> and we'll handle it from there. Please include your device model, Android/iOS version, and a short description of what happened.
+        </div>
+
+        <h2>Feature Requests</h2>
+        <p>Have an idea for something that would make the app better? We genuinely want to hear it. Either <a href="https://github.com/Robiton/collectionapp-support/issues/new" target="_blank" rel="noopener">open a GitHub issue</a> with the label "feature request", or email us directly.</p>
+        <p>Before submitting, <a href="https://github.com/Robiton/collectionapp-support/issues" target="_blank" rel="noopener">check existing issues</a> to see if someone else has already suggested the same thing — you can add a thumbs up to help us prioritize.</p>
+
+    </div>
+</div>
+
+<footer>
+    <div class="footer-inner">
+        <div class="footer-links">
+            <a href="about.html">About</a>
+            <a href="privacy.html">Privacy Policy</a>
+            <a href="contact.html">Contact</a>
+        </div>
+        <div>&copy; 2026 ZMW Apps. All rights reserved.</div>
+    </div>
+</footer>
+
+</body>
+</html>
