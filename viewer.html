@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none';">
+    <title>Collection Viewer — ZMW Apps</title>
+    <meta name="description" content="View your Collectors App JSON backup file. Read-only, 100% offline — no data leaves your device.">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#0A1628;--bg-card:#111F35;--bg-nav:#081120;--border:rgba(255,255,255,0.08);--text:#C8DBF0;--muted:#8BA3C7;--bright:#FFF;--accent:#F5A623;--purple:#667eea;--purple2:#764ba2;--green:#4caf50;--orange:#ff9800;--red:#f44336}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+        a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+
+        /* Nav */
+        nav{background:var(--bg-nav);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100}
+        .nav-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
+        .nav-logo{font-size:17px;font-weight:700;color:var(--bright);letter-spacing:-0.01em;text-decoration:none}
+        .nav-logo span{color:var(--accent)}
+        .nav-links{display:flex;gap:28px;list-style:none}
+        .nav-links a{font-size:14px;color:var(--muted);text-decoration:none;transition:color 0.15s}
+        .nav-links a:hover,.nav-links a.active{color:var(--bright)}
+
+        /* Layout */
+        .container{max-width:1100px;margin:0 auto;padding:0 24px}
+
+        /* Hero / drop zone */
+        .drop-zone{padding:60px 24px;text-align:center;background:radial-gradient(ellipse at 50% 0%,rgba(102,126,234,0.18) 0%,transparent 70%)}
+        .drop-zone h1{font-size:clamp(24px,4vw,36px);font-weight:800;color:var(--bright);margin-bottom:12px;letter-spacing:-0.02em}
+        .drop-zone p{color:var(--muted);font-size:16px;max-width:520px;margin:0 auto 28px;line-height:1.6}
+        .privacy-note{display:inline-block;font-size:12px;color:var(--green);background:rgba(76,175,80,0.1);border:1px solid rgba(76,175,80,0.25);border-radius:20px;padding:4px 14px;margin-bottom:20px}
+        .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;border:none;transition:opacity 0.15s,transform 0.1s}
+        .btn:hover{opacity:0.88;transform:translateY(-1px)}
+        .btn-primary{background:linear-gradient(135deg,var(--purple),var(--purple2));color:#fff}
+        .drag-hint{margin-top:16px;font-size:13px;color:var(--muted)}
+        .drop-zone.drag-over{background:radial-gradient(ellipse at 50% 0%,rgba(102,126,234,0.35) 0%,transparent 70%);border:2px dashed var(--purple)}
+
+        /* Stats bar */
+        .stats-bar{background:var(--bg-card);border-bottom:1px solid var(--border);padding:14px 24px;display:none}
+        .stats-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+        .stat{font-size:13px;color:var(--muted)}.stat strong{color:var(--bright);font-weight:700}
+        .stats-inner .search-wrap{flex:1;min-width:200px}
+        .stats-inner input{width:100%;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--bright);font-size:14px;outline:none}
+        .stats-inner input:focus{border-color:var(--purple)}
+        .stats-inner select{padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--bright);font-size:13px;outline:none;cursor:pointer}
+        .stats-inner .close-btn{margin-left:auto;padding:6px 14px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer}
+        .stats-inner .close-btn:hover{color:var(--bright);border-color:rgba(255,255,255,0.2)}
+
+        /* Grid */
+        .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:24px 0 60px}
+
+        /* Item cards */
+        .item-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.15s}
+        .item-card:hover{border-color:rgba(255,255,255,0.15)}
+        .item-photo{width:100%;aspect-ratio:1;object-fit:cover;background:var(--bg);display:block}
+        .item-photo-placeholder{width:100%;aspect-ratio:1;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:48px}
+        .item-body{padding:14px}
+        .item-name{font-size:15px;font-weight:700;color:var(--bright);margin-bottom:6px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .item-meta{font-size:12px;color:var(--muted);line-height:1.8}
+        .item-meta span{display:inline-block;margin-right:12px}
+        .badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;margin-right:4px}
+        .badge-mint{background:rgba(76,175,80,0.15);color:#66bb6a;border:1px solid rgba(76,175,80,0.3)}
+        .badge-good{background:rgba(255,152,0,0.15);color:#ffa726;border:1px solid rgba(255,152,0,0.3)}
+        .badge-worn{background:rgba(244,67,54,0.15);color:#ef5350;border:1px solid rgba(244,67,54,0.3)}
+        .badge-new{background:rgba(33,150,243,0.15);color:#42a5f5;border:1px solid rgba(33,150,243,0.3)}
+        .badge-preowned{background:rgba(156,39,176,0.15);color:#ab47bc;border:1px solid rgba(156,39,176,0.3)}
+
+        /* Detail modal */
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;align-items:center;justify-content:center;padding:20px}
+        .modal-overlay.active{display:flex}
+        .modal{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;max-width:600px;width:100%;max-height:85vh;overflow-y:auto;padding:28px;position:relative}
+        .modal-close{position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px 8px}
+        .modal-close:hover{color:var(--bright)}
+        .modal-photos{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px}
+        .modal-photos img{height:200px;border-radius:8px;object-fit:cover;flex-shrink:0}
+        .modal h2{font-size:20px;font-weight:700;color:var(--bright);margin-bottom:12px}
+        .modal-field{margin-bottom:8px;font-size:14px}.modal-field strong{color:var(--bright)}.modal-field span{color:var(--muted)}
+
+        /* Empty state */
+        .empty-state{text-align:center;padding:60px 24px;color:var(--muted)}
+        .empty-state p{font-size:15px}
+
+        /* Footer */
+        footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center;font-size:13px;color:var(--muted);margin-top:0}
+        footer a{color:var(--muted)}footer a:hover{color:var(--accent)}
+
+        /* Responsive */
+        @media(max-width:600px){
+            .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+            .nav-links{gap:16px}.nav-links a{font-size:13px}
+            .stats-inner{flex-direction:column;align-items:stretch;gap:10px}
+            .modal{margin:10px;padding:20px}
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="nav-inner">
+        <a href="/" class="nav-logo">ZMW<span>Apps</span></a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/viewer.html" class="active">Viewer</a></li>
+            <li><a href="/privacy.html">Privacy</a></li>
+            <li><a href="/contact.html">Contact</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Drop zone / hero -->
+<div class="drop-zone" id="dropZone">
+    <div class="privacy-note">No data is uploaded or transmitted</div>
+    <h1>Collection Viewer</h1>
+    <p>Open a JSON backup from Collectors App to browse your collection on any device. Everything stays in your browser.</p>
+    <button class="btn btn-primary" id="openBtn">Open JSON File</button>
+    <p class="drag-hint">or drag &amp; drop a .json file here</p>
+</div>
+
+<!-- Stats bar (shown after file loaded) -->
+<div class="stats-bar" id="statsBar">
+    <div class="stats-inner">
+        <div class="stat" id="statItems"></div>
+        <div class="stat" id="statPhotos"></div>
+        <div class="stat" id="statValue"></div>
+        <div class="search-wrap">
+            <input type="text" id="searchInput" placeholder="Search items...">
+        </div>
+        <select id="filterType"><option value="">All Types</option></select>
+        <select id="filterCondition">
+            <option value="">All Conditions</option>
+            <option value="Mint">Mint</option>
+            <option value="Good">Good</option>
+            <option value="Worn">Worn</option>
+            <option value="New">New</option>
+            <option value="Pre-Owned">Pre-Owned</option>
+        </select>
+        <select id="sortSelect">
+            <option value="name-asc">Name A-Z</option>
+            <option value="name-desc">Name Z-A</option>
+            <option value="date-desc">Newest First</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="price-desc">Price High-Low</option>
+            <option value="price-asc">Price Low-High</option>
+        </select>
+        <button class="close-btn" id="closeFileBtn">Close File</button>
+    </div>
+</div>
+
+<!-- Item grid -->
+<div class="container">
+    <div class="grid" id="grid"></div>
+</div>
+
+<!-- Detail modal -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+        <button class="modal-close" id="modalClose">&times;</button>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<footer>
+    <div>&copy; 2026 ZMW Apps &middot; <a href="/privacy.html">Privacy</a></div>
+</footer>
+
+<script>
+(function(){
+    'use strict';
+
+    let items = [];
+    let collectionData = null;
+
+    const dropZone = document.getElementById('dropZone');
+    const statsBar = document.getElementById('statsBar');
+    const grid = document.getElementById('grid');
+    const openBtn = document.getElementById('openBtn');
+    const closeBtn = document.getElementById('closeFileBtn');
+    const searchInput = document.getElementById('searchInput');
+    const filterType = document.getElementById('filterType');
+    const filterCondition = document.getElementById('filterCondition');
+    const sortSelect = document.getElementById('sortSelect');
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalContent = document.getElementById('modalContent');
+
+    // -- File open --
+    openBtn.addEventListener('click', () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = () => { if (input.files.length) loadFile(input.files[0]); };
+        input.click();
+    });
+
+    // -- Drag & drop --
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith('.json')) loadFile(file);
+    });
+
+    // -- Close file --
+    closeBtn.addEventListener('click', () => {
+        items = [];
+        collectionData = null;
+        grid.innerHTML = '';
+        dropZone.style.display = '';
+        statsBar.style.display = 'none';
+        searchInput.value = '';
+        filterType.innerHTML = '<option value="">All Types</option>';
+        filterCondition.value = '';
+        sortSelect.value = 'name-asc';
+    });
+
+    // -- Search / filter / sort --
+    searchInput.addEventListener('input', render);
+    filterType.addEventListener('change', render);
+    filterCondition.addEventListener('change', render);
+    sortSelect.addEventListener('change', render);
+
+    // -- Modal --
+    document.getElementById('modalClose').addEventListener('click', () => modalOverlay.classList.remove('active'));
+    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) modalOverlay.classList.remove('active'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modalOverlay.classList.remove('active'); });
+
+    function loadFile(file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const data = JSON.parse(reader.result);
+                if (data.items && Array.isArray(data.items)) {
+                    collectionData = data;
+                    items = data.items;
+                } else if (Array.isArray(data)) {
+                    collectionData = { items: data };
+                    items = data;
+                } else {
+                    alert('This file does not contain a valid collection. Expected an "items" array.');
+                    return;
+                }
+                dropZone.style.display = 'none';
+                statsBar.style.display = '';
+                updateStats();
+                buildTypeFilter();
+                render();
+            } catch (err) {
+                alert('Could not parse JSON: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function updateStats() {
+        const photoCount = items.reduce((n, i) => n + (i.photos ? i.photos.length : 0), 0);
+        const totalValue = items.reduce((n, i) => {
+            const p = parseFloat(i.purchasePrice);
+            return n + (isNaN(p) ? 0 : p);
+        }, 0);
+        document.getElementById('statItems').innerHTML = '<strong>' + items.length + '</strong> items';
+        document.getElementById('statPhotos').innerHTML = '<strong>' + photoCount + '</strong> photos';
+        document.getElementById('statValue').innerHTML = 'Total: <strong>$' + totalValue.toFixed(2) + '</strong>';
+    }
+
+    function buildTypeFilter() {
+        const types = [...new Set(items.map(i => i.type).filter(Boolean))].sort();
+        filterType.innerHTML = '<option value="">All Types</option>' +
+            types.map(t => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
+    }
+
+    function getFiltered() {
+        const q = searchInput.value.toLowerCase().trim();
+        const type = filterType.value;
+        const cond = filterCondition.value;
+
+        let filtered = items.filter(item => {
+            if (type && item.type !== type) return false;
+            if (cond && item.condition !== cond) return false;
+            if (q) {
+                const haystack = [item.name, item.type, item.brand, item.barcode, item.characters, item.notes]
+                    .filter(Boolean).join(' ').toLowerCase();
+                if (!haystack.includes(q)) return false;
+            }
+            return true;
+        });
+
+        const sort = sortSelect.value;
+        filtered.sort((a, b) => {
+            switch (sort) {
+                case 'name-asc': return (a.name || '').localeCompare(b.name || '');
+                case 'name-desc': return (b.name || '').localeCompare(a.name || '');
+                case 'date-desc': return (b.dateAdded || '').localeCompare(a.dateAdded || '');
+                case 'date-asc': return (a.dateAdded || '').localeCompare(b.dateAdded || '');
+                case 'price-desc': return (parseFloat(b.purchasePrice) || 0) - (parseFloat(a.purchasePrice) || 0);
+                case 'price-asc': return (parseFloat(a.purchasePrice) || 0) - (parseFloat(b.purchasePrice) || 0);
+                default: return 0;
+            }
+        });
+
+        return filtered;
+    }
+
+    function render() {
+        const filtered = getFiltered();
+        if (!filtered.length) {
+            grid.innerHTML = '<div class="empty-state"><p>No items match your search.</p></div>';
+            return;
+        }
+        grid.innerHTML = filtered.map((item, idx) => {
+            const photo = item.photos && item.photos.length ? item.photos[0] : null;
+            const photoHtml = photo
+                ? '<img class="item-photo" src="' + esc(photo) + '" alt="" loading="lazy">'
+                : '<div class="item-photo-placeholder">&#x1F4E6;</div>';
+            const condBadge = conditionBadge(item.condition);
+            const price = parseFloat(item.purchasePrice);
+            const priceStr = isNaN(price) ? '' : '$' + price.toFixed(2);
+            return '<div class="item-card" data-idx="' + idx + '">' +
+                photoHtml +
+                '<div class="item-body">' +
+                '<div class="item-name">' + esc(item.name || 'Unnamed') + '</div>' +
+                '<div class="item-meta">' +
+                (item.type ? '<span>' + esc(item.type) + '</span>' : '') +
+                (item.brand ? '<span>' + esc(item.brand) + '</span>' : '') +
+                (condBadge ? '<span>' + condBadge + '</span>' : '') +
+                (priceStr ? '<span>' + priceStr + '</span>' : '') +
+                '</div></div></div>';
+        }).join('');
+
+        // Card click -> detail modal
+        grid.querySelectorAll('.item-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const item = filtered[parseInt(card.dataset.idx)];
+                showDetail(item);
+            });
+        });
+    }
+
+    function showDetail(item) {
+        let html = '';
+
+        // Photos
+        if (item.photos && item.photos.length) {
+            html += '<div class="modal-photos">' +
+                item.photos.map(p => '<img src="' + esc(p) + '" alt="">').join('') +
+                '</div>';
+        }
+
+        html += '<h2>' + esc(item.name || 'Unnamed') + '</h2>';
+
+        const fields = [
+            ['Type', item.type],
+            ['Brand', item.brand],
+            ['Condition', item.condition],
+            ['Characters', item.characters],
+            ['Barcode', item.barcode],
+            ['Purchase Price', item.purchasePrice != null ? '$' + parseFloat(item.purchasePrice).toFixed(2) : null],
+            ['Date Added', item.dateAdded ? new Date(item.dateAdded).toLocaleDateString() : null],
+            ['Notes', item.notes],
+            ['Copy #', item.copyNumber > 1 ? item.copyNumber : null],
+        ];
+
+        fields.forEach(([label, value]) => {
+            if (value) {
+                html += '<div class="modal-field"><strong>' + label + ': </strong><span>' + esc(String(value)) + '</span></div>';
+            }
+        });
+
+        if (item.id) {
+            html += '<div class="modal-field" style="margin-top:12px;font-size:11px;color:var(--muted)">ID: ' + esc(item.id) + '</div>';
+        }
+
+        modalContent.innerHTML = html;
+        modalOverlay.classList.add('active');
+    }
+
+    function conditionBadge(condition) {
+        if (!condition) return '';
+        const cls = {
+            'Mint': 'badge-mint', 'Good': 'badge-good', 'Worn': 'badge-worn',
+            'New': 'badge-new', 'Pre-Owned': 'badge-preowned'
+        }[condition] || '';
+        return '<span class="badge ' + cls + '">' + esc(condition) + '</span>';
+    }
+
+    function esc(str) {
+        if (!str) return '';
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+})();
+</script>
+
+</body>
+</html>
