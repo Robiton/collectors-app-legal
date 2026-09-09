@@ -6,7 +6,7 @@ _At each release, move completed tasks to BACKLOG_ARCHIVE.md — keep this file 
 
 ---
 
-<!-- scaffold:session-log ../ai-project-scaffold-dev/ai/SESSION.md -->
+<!-- scaffold:session-log ai/SESSION.md -->
 _This repository's session log lives in the `-dev` sibling — people receive this
 repo and our history of building it is not part of what they receive. `tools/session_currency.sh`
 reads the line above so the record is checked where it actually is, rather than being
