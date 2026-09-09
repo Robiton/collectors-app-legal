@@ -1,0 +1,30 @@
+# Project:  ai-project-scaffold
+# File:     .github/dependabot.yml
+# Modified: 2026-08-18
+# Version:  0.1.0.20260818.2113
+# Purpose:  Keep the action pins this repository owns from going quietly stale
+# Changelog:
+#   2026-08-18 v0.1.0.20260818.2113 — Initial. WHY THIS AND NOT A SCANNER: the action pins
+#                        here are already enforced by tools/preflight.sh (ACTION_FLOORS),
+#                        which FAILS a push below the floor. What that cannot do is tell
+#                        anyone a NEWER major exists -- it only knows the number somebody
+#                        typed into it. So the floor stops a regression and this notices the
+#                        world moving, which are two different jobs and the reason both are
+#                        wanted. Raising the floor stays a human decision.
+version: 2
+updates:
+  # GITHUB ACTIONS. These are the pins this repository owns and nobody else can change:
+  # scaffold-check.yml ships to every adopter, and mirror-sync.yml travels to the org mirror.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    # A LOW LIMIT ON PURPOSE. An open PR nobody looks at is worse than no PR: it trains
+    # people to ignore the list, which is the same lesson this tree keeps relearning about
+    # warnings that fire on every green run.
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(actions)"
+    labels:
+      - "dependencies"

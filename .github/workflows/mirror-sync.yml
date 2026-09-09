@@ -1,0 +1,151 @@
+name: Mirror to bworrell_Zotec
+
+# Pushes main and all tags to the downstream mirror (bworrell_Zotec/ai-project-scaffold).
+# Uses a write-scoped deploy key (secret: MIRROR_DEPLOY_KEY). This repo's main is the
+# source of truth, so the push is forced to guarantee the mirror reflects it exactly.
+#
+# TAGS NEED THEIR OWN TRIGGER. A release tag is created AFTER the release PR merges, so
+# the push-triggered run fires on the merge commit while the tag does not yet exist.
+# Observed at v0.5.0: the mirror carried the released code with no release tag until the
+# workflow was re-dispatched by hand. Without the tag trigger below, every release leaves
+# the org copy untagged until someone remembers.
+
+on:
+  push:
+    branches: [main]
+    tags: ['*']
+  workflow_dispatch:
+
+concurrency:
+  group: mirror-sync
+  # TRUE IS SAFE HERE **BECAUSE THE MIRROR IS FULL-STATE, NOT INCREMENTAL**. The job below
+  # checks out `ref: main` at HEAD — not the triggering commit — and force-pushes main plus
+  # ALL tags. So run N+1 does everything run N would have done, and a superseded run has
+  # nothing of its own to contribute. This is the property that makes cancellation safe; a
+  # mirror that pushed only the triggering commit would lose work here.
+  #
+  # It was `false`, and that cost real money. 215 runs this billing cycle in this repo, each
+  # ~9 SECONDS of work but BILLED AS A FULL MINUTE (Actions rounds every job up). 110 of the
+  # 215 started within five minutes of another — release bursts, where the mirror ran again
+  # and again for a state the last run would have pushed anyway. ~145 billed minutes across
+  # this repo and localcoder for zero signal.
+  #
+  # The one window this opens: a run cancelled BETWEEN `push main` and `push --tags` leaves
+  # the mirror briefly tagless. The run that cancelled it completes both, and the newest run
+  # in a burst is never itself cancelled — cancellation requires a successor.
+  cancel-in-progress: true
+
+# LEAST PRIVILEGE, DECLARED IN THE FILE RATHER THAN INHERITED FROM A SETTING.
+#
+# With no `permissions:` block a workflow gets the repository's default GITHUB_TOKEN scope.
+# Robiton/ai-project-scaffold is set to `read`, so nothing here was over-privileged — but
+# THAT IS A REPOSITORY SETTING AND THIS FILE IS A PRODUCT. It is force-installed into every
+# adopter on upgrade, and an adopter whose organisation still defaults to read-write would
+# run it with a token that can push commits, cut releases and edit workflows. The guarantee
+# has to travel with the file, not sit in a checkbox on one repository.
+#
+# Nothing here uses GITHUB_TOKEN at all: the checkout needs read, and the mirror step
+# authenticates with its own deploy key. So read is not a compromise, it is the actual need.
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    # THIS WORKFLOW TRAVELS TO THE MIRROR. `git push --force mirror --tags` below sends
+    # every tracked file, including this one — so the downstream copy carries a workflow
+    # whose whole job is to push to the downstream copy. Today that is inert only because
+    # Actions happen to be disabled on the mirror; enable them and every push there fires
+    # "Mirror to bworrell_Zotec" against a repo with no MIRROR_DEPLOY_KEY, failing in
+    # seconds, forever, and looking exactly like the SOURCE mirror is broken.
+    #
+    # Observed 2026-08-04 in the sibling `localcoder` repo: a mirror failure that had
+    # nothing to do with the scaffold cost real time to trace, purely because the workflow
+    # NAME is identical wherever the file lands. Pin it to the one repository that should
+    # ever run it, and the whole class becomes impossible rather than merely unlikely.
+    if: github.repository == 'Robiton/ai-project-scaffold'
+    # THE RUNNER IS A REPO DECISION, NOT A FILE EDIT. This file is a PRODUCT_FILE: the
+    # scaffold force-installs it on every upgrade, and it ships to adopters who have no
+    # self-hosted runner. Hardcoding `self-hosted` here would break every one of them and
+    # leave a .scaffold-<version> sidecar to reconcile by hand forever -- which is the exact
+    # mechanism that put three of them in a tracked tree for three days in August.
+    # So the default stays hosted and a single repository variable retargets one repo:
+    #     gh variable set SCAFFOLD_RUNNER --body self-hosted
+    # Unset, `vars.SCAFFOLD_RUNNER` is empty and this resolves to ubuntu-latest.
+    #
+    # NO MATRIX HERE, ON PURPOSE. scaffold-check fans across SCAFFOLD_RUNNERS because
+    # running the same gate on two platforms is the point. This job PUSHES to a mirror;
+    # running it twice concurrently is two racing pushes to one ref, where the loser fails
+    # noisily and the winner's result depends on scheduling. One mirror, one writer.
+    #
+    # It still has to READ the new variable, or a repo that migrates to SCAFFOLD_RUNNERS
+    # and drops the old one would silently send this job to a hosted runner. `[0]` takes
+    # the first entry -- a list-of-labels entry stays a list, which `runs-on` accepts.
+    runs-on: ${{ fromJSON(vars.SCAFFOLD_RUNNERS || (vars.SCAFFOLD_RUNNER && format('["{0}"]', vars.SCAFFOLD_RUNNER)) || '["ubuntu-latest"]')[0] }}
+    steps:
+      - name: Checkout main with full history and tags
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          # ALWAYS main, never the triggering ref. On a tag-triggered run the default
+          # checkout is the TAG, so `HEAD:main` below would force the mirror's main back
+          # to the tagged commit — dragging it backwards whenever main has moved on.
+          # Pinning the ref makes both triggers push exactly the same branch state.
+          ref: main
+
+      - name: Push main and tags to mirror
+        env:
+          DEPLOY_KEY: ${{ secrets.MIRROR_DEPLOY_KEY }}
+        run: |
+          # NOTHING HERE MAY ASSUME A FRESH MACHINE.
+          #
+          # This step was written for GitHub-hosted runners, where every job gets a new VM
+          # and `git remote add` therefore always succeeds. On a SELF-HOSTED runner the
+          # workspace and the home directory PERSIST between runs, so the second run and
+          # every run after it died on
+          #
+          #   error: remote mirror already exists.
+          #   ##[error]Process completed with exit code 3.
+          #
+          # in five seconds, with `shell: bash -e` aborting the step. Measured 2026-08-18,
+          # after self-hosted runners were added to all four repositories: the mirror had
+          # not moved in 36 releases and the reason changed from a billing block to this
+          # without anyone noticing, because both present as a red X on a step nobody reads.
+          #
+          # So: no named remote at all. Pushing to the URL is idempotent by construction and
+          # leaves nothing behind for the next run to trip over.
+          MIRROR_URL="git@github.com:bworrell_Zotec/ai-project-scaffold.git"
+          mkdir -p ~/.ssh
+          # THE PRIVATE KEY MUST NOT OUTLIVE THE JOB, AND IT USED TO.
+          #
+          # This wrote a WRITE-SCOPED deploy key to ~/.ssh/mirror_key and never removed it.
+          # That was harmless on a GitHub-hosted runner, where the VM is destroyed after the
+          # job — and this step was written for one. On a SELF-HOSTED runner the home
+          # directory persists, which this same step already learned the hard way when
+          # `git remote add` started failing on every run after the first.
+          #
+          # The exposure that created: all four of this programme's repositories run on ONE
+          # self-hosted runner as ONE user, so a workflow in ai-project-scaffold-dev or
+          # localcoder-dev — neither of which has a deploy key of its own — could read a
+          # key that can force-push to the Zotec-visible mirror. Both mirrors also wrote to
+          # the SAME path, so whichever ran last was the one left on disk. And it stayed
+          # there indefinitely, on a laptop.
+          #
+          # $RUNNER_TEMP is per-job and cleaned by the runner; the trap covers success,
+          # failure and cancellation, which `rm` on the last line would not.
+          KEY_FILE="$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/mirror_key.XXXXXX")"
+          trap 'rm -f "$KEY_FILE"' EXIT INT TERM
+          chmod 600 "$KEY_FILE"
+          printf '%s\n' "$DEPLOY_KEY" > "$KEY_FILE"
+          # ONE-TIME CLEANUP of the key this step used to leave behind. Removing it here
+          # rather than by hand means every runner that has ever run this workflow is
+          # cleaned the next time it does, including ones nobody remembers.
+          rm -f ~/.ssh/mirror_key
+          # APPENDED ON EVERY RUN on a persistent runner, so known_hosts grew without bound
+          # and re-pinned the same key each time. Add it only when it is not already there.
+          # known_hosts is a public fingerprint, not a secret, so it stays in ~/.ssh.
+          if ! ssh-keygen -F github.com >/dev/null 2>&1; then
+            ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          fi
+          export GIT_SSH_COMMAND="ssh -i $KEY_FILE -o IdentitiesOnly=yes"
+          git push --force "$MIRROR_URL" HEAD:main
+          git push --force "$MIRROR_URL" --tags

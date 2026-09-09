@@ -1,0 +1,25 @@
+# CODEOWNERS
+#
+# Defines who is responsible for reviewing changes to specific files or directories.
+# GitHub automatically requests review from the listed owner when a PR touches those paths.
+# Last updated: 2026-04-02
+#
+# Format: <path_pattern>  <github_handle>
+# More specific rules override less specific ones.
+# Handles must be GitHub usernames prefixed with @.
+
+# Default owner for everything not matched below
+*                                   @Robiton
+
+# Scaffold standards — changes need careful review
+ai/STANDARDS.md                     @Robiton
+ai/CODING.md                        @Robiton
+ai/SECURITY.md                      @Robiton
+ai/TEAM.md                          @Robiton
+
+# All overlays — standards changes affect every project using them
+overlays/                           @Robiton
+
+# GitHub config and CI
+.github/                            @Robiton
+setup.sh                            @Robiton

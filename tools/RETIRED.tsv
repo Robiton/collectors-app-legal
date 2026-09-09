@@ -1,0 +1,20 @@
+# Files this scaffold ONCE SHIPPED and no longer does.
+#
+# WHY A MANIFEST RATHER THAN A TREE DIFF (#253). scaffold_upgrade compares the adopter's
+# BASELINE release against the NEW one to decide what upstream retired. That is sound for
+# anything retired DURING the span being upgraded across, and structurally blind to anything
+# retired BEFORE the baseline: such a file is in neither tree, so it cannot be told apart
+# from one the adopter added. Measured -- an adopter on 0.38.3 upgrading to 0.82.2 still had
+# both files below, because they were already gone from upstream when that baseline was cut.
+#
+# EVERY SHA THE PATH WAS EVER SHIPPED WITH, NOT JUST THE LAST (#255). A file changes over its
+# shipped life. Recording only the final revision misclassifies every adopter sitting on an
+# earlier one as having EDITED it -- and the adopters most likely to be on an older revision
+# are the ones who have carried the file longest, which is exactly the backlog this manifest
+# exists to clear. Measured: install_ollama_service.sh shipped in four distinct revisions; an
+# adopter holding the 0.14.0 one was told they had edited a file they had never touched.
+# Matching ANY shipped sha means "you never touched this" is answered correctly.
+#
+# FORMAT, tab-separated:   <path>   <comma-separated shas, any may match>   <note>
+tools/install_ollama_service.sh	1cbc7797b040866608a69274d0a6f22604e552e26eb92f54b880ef712f77e222,b96575ee7b5ba34e7aaa2d9798d0d8853e86d48a4d0be0b3036610af6b35d314,c0705146efdbe2ed0d329640ba7adc47ce357f36d18256e065fb83dc23a4e975,e0a21750d8bdfd536e0e43afecd37370d0c61c5b534701a09d71fa8b5e5b6e5f	moved to localcoder ops/ (W-15)
+tools/com.ollama.serve.plist.template	89080c2f9c5bb484b8ea34b185d80dede193bde81da3129730bbd75d9ab08a5c,f3b3f05fc1cff1b5aa1cca481d149ac6cb020d61c9bf30625511eeb38bebae7d	moved to localcoder ops/ (W-15)

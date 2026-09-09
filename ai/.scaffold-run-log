@@ -1,0 +1,24 @@
+2026-09-09T21:21:27Z	conflict_scan.sh	ok	
+2026-09-09T21:21:27Z	marker_scan.sh	ok	
+2026-09-09T21:21:27Z	mode_scan.sh	ok	
+2026-09-09T21:21:27Z	secret_scan.sh	ok	
+2026-09-09T21:21:27Z	stale_path_scan.sh	ok	
+2026-09-09T21:21:28Z	header_check.sh	ok	
+2026-09-09T21:21:28Z	session_archive.py	ok	
+2026-09-09T21:21:28Z	setup.sh --check	FAIL	2 failure(s)
+2026-09-09T21:22:19Z	conflict_scan.sh	ok	
+2026-09-09T21:22:19Z	marker_scan.sh	ok	
+2026-09-09T21:22:20Z	mode_scan.sh	ok	
+2026-09-09T21:22:20Z	secret_scan.sh	ok	
+2026-09-09T21:22:20Z	stale_path_scan.sh	ok	
+2026-09-09T21:22:21Z	header_check.sh	ok	
+2026-09-09T21:22:21Z	session_archive.py	ok	
+2026-09-09T21:22:21Z	setup.sh --check	FAIL	2 failure(s)
+2026-09-09T21:22:40Z	conflict_scan.sh	ok	
+2026-09-09T21:22:40Z	marker_scan.sh	ok	
+2026-09-09T21:22:40Z	mode_scan.sh	ok	
+2026-09-09T21:22:40Z	secret_scan.sh	ok	
+2026-09-09T21:22:40Z	stale_path_scan.sh	ok	
+2026-09-09T21:22:41Z	header_check.sh	ok	
+2026-09-09T21:22:41Z	session_archive.py	ok	
+2026-09-09T21:22:41Z	setup.sh --check	ok	

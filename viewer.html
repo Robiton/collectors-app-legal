@@ -264,7 +264,10 @@
     }
 
     function buildTypeFilter() {
-        const types = [...new Set(items.map(i => i.type).filter(Boolean))].sort();
+        // The app exports `itemType`; this read `type`, so the dropdown was always
+        // empty and the Type filter could never match anything. Fourth site of the
+        // same field-name mismatch.
+        const types = [...new Set(items.map(i => i.itemType || i.type).filter(Boolean))].sort();
         filterType.innerHTML = '<option value="">All Types</option>' +
             types.map(t => '<option value="' + esc(t) + '">' + esc(t) + '</option>').join('');
     }
@@ -275,10 +278,16 @@
         const cond = filterCondition.value;
 
         let filtered = items.filter(item => {
-            if (type && item.type !== type) return false;
+            if (type && (item.itemType || item.type) !== type) return false;
             if (cond && item.condition !== cond) return false;
             if (q) {
-                const haystack = [item.name, item.type, item.brand, item.barcode, item.characters, item.notes]
+                const haystack = [item.name, item.itemType || item.type, item.brand, item.barcode,
+                                 item.characters, item.notes, item.description, item.series,
+                                 // Added 2026-09-09: the edition is what distinguishes two items
+                                 // sharing one barcode, and it was savable but not findable here
+                                 // — the same gap the app itself had until today.
+                                 item.editionMarker, item.variant, item.collectorNumber,
+                                 item.castingName, item.purchaseLocation]
                     .filter(Boolean).join(' ').toLowerCase();
                 if (!haystack.includes(q)) return false;
             }
@@ -320,7 +329,13 @@
                 '<div class="item-body">' +
                 '<div class="item-name">' + esc(item.name || 'Unnamed') + '</div>' +
                 '<div class="item-meta">' +
-                (item.type ? '<span>' + esc(item.type) + '</span>' : '') +
+                ((item.itemType || item.type) ? '<span>' + esc(item.itemType || item.type) + '</span>' : '') +
+          // The EDITION, shown on the card. Two items can share a barcode, a name and a
+          // photo and differ only here — a viewer that omits it cannot answer the
+          // question the collection exists to answer.
+          ((item.editionMarker || item.variant)
+            ? '<span>' + esc(item.editionMarker || item.variant) + '</span>' : '') +
+          (item.collectorNumber ? '<span>#' + esc(item.collectorNumber) + '</span>' : '') +
                 (item.brand ? '<span>' + esc(item.brand) + '</span>' : '') +
                 (condBadge ? '<span>' + condBadge + '</span>' : '') +
                 (priceStr ? '<span>' + priceStr + '</span>' : '') +
